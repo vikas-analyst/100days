@@ -1,3 +1,11 @@
+import datetime
+today_date = datetime.date.today()
+DD = datetime.timedelta(days=90)
+earlier = today_date - DD
+
+date1 = earlier.strftime("%d-%m-%Y")
+date2 = today_date.strftime("%d-%m-%Y")
+
 
 def down1():
     import requests
@@ -24,7 +32,9 @@ def down2():
     with open("EQUITY_L.csv","w") as f:
         f.write(data1)
 def down3():
-    url="https://www.nseindia.com/api/corporate-sast-reg29?index=equities&from_date=14-10-2021&to_date=14-01-2022&csv=true"
+    # date1 = "28-10-2021"
+    # date2 = "28-01-2022"
+    url=f"https://www.nseindia.com/api/corporate-sast-reg29?index=equities&from_date={date1}&to_date={date2}&csv=true"
     import requests
     import pandas as pd
     baseurl = "https://www.nseindia.com/"
@@ -53,8 +63,8 @@ def down4():
 def down5():
 
     import requests
-    date1="28-10-2021"
-    date2="28-01-2022"
+    # date1="28-10-2021"
+    # date2="28-01-2022"
     baseurl = "https://www.nseindia.com/"
 
     url = f"https://www.nseindia.com/api/corporates-pit?index=equities&from_date={date1}&to_date={date2}"
