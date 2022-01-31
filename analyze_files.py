@@ -3,6 +3,16 @@ import pandas
 import os
 import numpy
 import datetime
+import glob
+
+files = glob.glob('sorted/*.csv')
+for f in files:
+    os.remove(f)
+try:
+    os.remove("swing_trading_output.xlsx")
+    os.remove("swing_output.xlsx")
+except:
+    pass
 
 FILES = {
     'Insider': {
@@ -112,11 +122,53 @@ def main():
         working_df = working_df.append(old_df)
     except FileNotFoundError:  # Will be thrown if this is the first run
         pass
-    k = datetime.datetime.now().strftime('%m/%d/%H/%M/%S')
+    # working_df=pandas.to_numeric(working_df["CLOSE_PRICE"])#,downcast="float")
+    # working_df=pandas.to_numeric(working_df["BUYING AVG PRICE OF PROMOTERS/PROMOTER GROUP"])#,downcast="float")
+    working_df = working_df.drop(['VALUE OF SECURITY (ACQUIRED/DISPLOSED)', 'BUYING QTY OF PROMOTERS/PROMOTER GROUP',
+                                  "SELLING QTY PRICE OF PROMOTERS/PROMOTER GROUP (MARKET SELL DATA)",
+                                  "SELLING AVG PRICE OF PROMOTERS/PROMOTER GROUP (MARKET SELL DATA)",
+                                  "SHAREHOLDING PATTERN OF PROMOTERS/PROMOTER GROUP", "SAST REGULATIONS (SOLD QTY)",
+                                  "PLEDGED DATA OF PROMOTER/PROMOTER GROUP"], axis=1)
+
+
+
     working_df = working_df[working_df['SIGNAL'].str.contains("PASSED", na=False)]
     writer = pandas.ExcelWriter(f'swing_trading_output.xlsx', engine='xlsxwriter', date_format='dd-mmm-YYYY', datetime_format='dd-mmm-YYYY')
     working_df.to_excel(writer, index=False)
     writer.save()
+
+    file = "swing_trading_output.xlsx"
+    working_df = pandas.read_excel(file)
+    # os.remove("swing_trading_output.xlsx")
+    working_df['CLOSE_PRICE'] = working_df['CLOSE_PRICE'].astype(float)
+    working_df['BUYING AVG PRICE OF PROMOTERS/PROMOTER GROUP'] = working_df[
+        'BUYING AVG PRICE OF PROMOTERS/PROMOTER GROUP'].astype(float)
+
+    working_df["change"] = ((working_df["CLOSE_PRICE"] / working_df["BUYING AVG PRICE OF PROMOTERS/PROMOTER GROUP"]) - 1)
+
+    working_df = working_df.sort_values('change')
+
+    writer1 = pandas.ExcelWriter(f'swing_output.xlsx', engine='xlsxwriter', date_format='dd-mmm-YYYY', datetime_format='dd-mmm-YYYY')
+
+    # Convert the dataframe to an XlsxWriter Excel object.
+    working_df.to_excel(writer1, sheet_name='Sheet1')
+
+    # Get the xlsxwriter workbook and worksheet objects.
+    workbook = writer1.book
+    worksheet = writer1.sheets['Sheet1']
+
+    # Add some cell formats.
+    format1 = workbook.add_format({'num_format': '#,##0.0%'})
+    # format2 = workbook.add_format({'num_format': '0%'})
+
+    # Set the column width and format.
+    # worksheet.set_column(1, 1, 18, format1)
+    worksheet.set_column(0,4,width=20)
+    worksheet.set_column(5,5,width=20, cell_format=format1)
+
+
+    working_df.to_excel(writer1, index=False)
+    writer1.save()
 
     # Move all processed files to sorted directory
     if not os.path.isdir('sorted'):
